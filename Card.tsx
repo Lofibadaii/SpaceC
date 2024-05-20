@@ -1,13 +1,148 @@
-import React, { useState } from 'react';
+<main>
+  {/* بطاقة التعدين */}
+  <Card cardType="miningPurchase" />
+      
+  {/* بطاقة شراء المزيد من النجوم */}
+  <Card cardType="buyMoreStars" />
+
+  {/* بطاقة للروابط */}
+  <Card cardType="referralLinks" />
+</main>
+import { useState, useEffect } from 'react';
+
+const MINING_PURCHASE_KEY = 'miningPurchaseData';
+const LINKS_REWARDS_KEY = 'linksRewardsData';
+
+const useCardStorage = (cardType: string) => {
+  const [miningPurchaseData, setMiningPurchaseData] = useState({
+    stars: 0,
+    level: 0,
+    miningHoursPerStar: 0,
+    totalMiningHours: 0,
+  });
+
+  const [linksRewardsData, setLinksRewardsData] = useState({
+    referralRewards: 0,
+    referralLink: '',
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const miningData = localStorage.getItem(MINING_PURCHASE_KEY);
+      const linksData = localStorage.getItem(LINKS_REWARDS_KEY);
+      
+      if (miningData) {
+        setMiningPurchaseData(JSON.parse(miningData));
+      }
+      
+      if (linksData) {
+        setLinksRewardsData(JSON.parse(linksData));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(MINING_PURCHASE_KEY, JSON.stringify(miningPurchaseData));
+    }
+  }, [miningPurchaseData]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LINKS_REWARDS_KEY, JSON.stringify(linksRewardsData));
+    }
+  }, [linksRewardsData]);
+
+  const setData = cardType === 'miningPurchase' ? setMiningPurchaseData : setLinksRewardsData;
+
+  const updateMiningTime = (newTime: number) => {
+    if (cardType === 'miningPurchase') {
+      setMiningPurchaseData((prevState) => ({
+        ...prevState,
+        mining: {
+          ...prevState.mining,
+          time: newTime,
+        },
+      }));
+    }
+  };
+
+  const updateStarCount = (newStarCount: number) => {
+    if (cardType === 'miningPurchase') {
+      setMiningPurchaseData((prevState) => ({
+        ...prevState,
+        stars: newStarCount,
+      }));
+    }
+  };
+
+  const updateLevel = (newLevel: number) => {
+    if (cardType === 'miningPurchase') {
+      setMiningPurchaseData((prevState) => ({
+        ...prevState,
+        level: newLevel,
+      }));
+    }
+  };
+
+  const updateMiningHoursPerStar = (newMiningHoursPerStar: number) => {
+    if (cardType === 'miningPurchase') {
+      setMiningPurchaseData((prevState) => ({
+        ...prevState,
+        miningHoursPerStar: newMiningHoursPerStar,
+      }));
+    }
+  };
+
+  const updateTotalMiningHours = (newTotalMiningHours: number) => {
+    if (cardType === 'miningPurchase') {
+      setMiningPurchaseData((prevState) => ({
+        ...prevState,
+        totalMiningHours: newTotalMiningHours,
+      }));
+    }
+  };
+
+  const updateReferralRewards = (newReferralRewards: number) => {
+    if (cardType === 'linksRewards') {
+      setLinksRewardsData((prevState) => ({
+        ...prevState,
+        referralRewards: newReferralRewards,
+      }));
+    }
+  };
+
+  const updateReferralLink = (newReferralLink: string) => {
+    if (cardType === 'linksRewards') {
+      setLinksRewardsData((prevState) => ({
+        ...prevState,
+        referralLink: newReferralLink,
+      }));
+    }
+  };
+
+  return {
+    miningPurchaseData,
+    setMiningPurchaseData,
+    linksRewardsData,
+    setLinksRewardsData,
+    updateMiningTime,
+    updateStarCount,
+    updateLevel,
+    updateMiningHoursPerStar,
+    updateTotalMiningHours,
+    updateReferralRewards,
+    updateReferralLink,
+  };
+};
+
+export default useCardStorage;
+import React, { useState, useEffect } from 'react';
 import useCardStorage from './useCardStorage';
 
-
-
-
-
 const usePointerGlow = () => {
-  const [status, setStatus] = React.useState(null);
-  React.useEffect(() => {
+  const [status, setStatus] = useState(null);
+  useEffect(() => {
     const syncPointer = ({ clientX: pointerX, clientY: pointerY }) => {
       const x = pointerX.toFixed(2);
       const y = pointerY.toFixed(2);
@@ -26,25 +161,19 @@ const usePointerGlow = () => {
   }, []);
   return [status];
 };
+
 const Card = ({ cardType }) => {
-usePointerGlow();
+  usePointerGlow();
   const {
     miningPurchaseData,
-    setMiningPurchaseData,
     linksRewardsData,
-    setLinksRewardsData,
-    updateMiningTime,
-    updateStarCount,
     updateLevel,
     updateMiningHoursPerStar,
     updateTotalMiningHours,
-    updateReferralRewards,
-    updateReferralLink,
-  } = useCardStorage();
+  } = useCardStorage(cardType);
 
   const data = cardType === 'miningPurchase' ? miningPurchaseData : linksRewardsData;
-  const setData = cardType === 'miningPurchase' ? setMiningPurchaseData : setLinksRewardsData;
-
+  
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [walletAddress, setWalletAddress] = useState('');
@@ -55,92 +184,69 @@ usePointerGlow();
       stars: 100,
       miningHoursPerStar: 0.001,
       totalMiningHours: 5,
-      price: 0, // Free level
+      price: 0,
     },
     level1: {
       stars: 300,
       miningHoursPerStar: 0.01,
       totalMiningHours: 10,
-      price: 0.06, // 0.5 ton
+      price: 0.06,
     },
     level2: {
       stars: 600,
       miningHoursPerStar: 0.05,
       totalMiningHours: 20,
-      price: 0.5, // 1 ton
+      price: 0.5,
     },
     level3: {
       stars: 900,
       miningHoursPerStar: 0.1,
       totalMiningHours: 40,
-      price: 1, // 2 ton
+      price: 1,
     },
   };
 
-  // Calculate mining hours and level-based information
-  const miningHoursPerStar = data.miningHoursPerStar;
-  const totalStars = data.stars;
-  const totalMiningHours = miningHoursPerStar * totalStars;
-  const level = data.level;
-
-  // Handle payment for level up
   const handleLevelUpPayment = async () => {
     if (!walletAddress) {
       alert('Please enter your wallet address');
       return;
     }
-
-    // Simulate payment using a mock payment gateway (replace with actual payment processing)
     console.log(`Simulating payment of ${miningRules[selectedLevel].price} ton to wallet ${walletAddress}`);
-    await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate delay
-
-    // Update level and mining rules
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     updateLevel(selectedLevel);
     updateMiningHoursPerStar(miningRules[selectedLevel].miningHoursPerStar);
     updateTotalMiningHours(miningRules[selectedLevel].totalMiningHours);
-
-    // Close payment modal
     setShowPaymentModal(false);
   };
 
-  // Display mining information (if cardType is 'miningPurchase')
   if (cardType === 'miningPurchase') {
     return (
       <article data-glow>
         <span data-glow />
         <div className="card-content">
-          {/* ... existing mining information ... */}
-
-          {/* Level-based information */}
-          <p>Current Level: {level}</p>
-          <p>Level {level + 1} Details:</p>
-          <ul>
-            <li>Stars Required: {miningRules[level + 1].stars}</li>
-            <li>Mining per Star: {miningRules[level + 1].miningHoursPerStar} space/hour</li>
-            <li>Total Mining Hours: {miningRules[level + 1].totalMiningHours}</li>
-            <li>Price: {miningRules[level + 1].price} ton</li>
-          </ul>
-
-          <button
-            onClick={() => {
-              setSelectedLevel(level + 1);
-              setShowPaymentModal(true);
-            }}
-            disabled={level >= Object.keys(miningRules).length - 1}
-          >
-            Level Up
-          </button>
+          <p>Current Level: {data.level}</p>
+          {data.level < Object.keys(miningRules).length - 1 && (
+            <>
+              <p>Level {data.level + 1} Details:</p>
+              <ul>
+                <li>Stars Required: {miningRules[`level${data.level + 1}`].stars}</li>
+                <li>Mining per Star: {miningRules[`level${data.level + 1}`].miningHoursPerStar} space/hour</li>
+                <li>Total Mining Hours: {miningRules[`level${data.level + 1}`].totalMiningHours}</li>
+                <li>Price: {miningRules[`level${data.level + 1}`].price} ton</li>
+              </ul>
+              <button
+                onClick={() => {
+                  setSelectedLevel(data.level + 1);
+                  setShowPaymentModal(true);
+                }}
+                disabled={data.level >= Object.keys(miningRules).length - 1}
+              >
+                Level Up
+              </button>
+            </>
+          )}
         </div>
-        <button data-glow>
-          <span>Glow Up</span>
-        </button>
 
-        {/* Payment modal (conditionally rendered) */}
-        {showPaymentModal && (
-          <div className="payment-
-// ... existing code for Card component ...
-
-        {/* Payment modal (conditionally rendered) */}
         {showPaymentModal && (
           <div className="payment-modal">
             <h2>Level Up to Level {selectedLevel + 1}</h2>
@@ -155,14 +261,22 @@ usePointerGlow();
             <button onClick={() => setShowPaymentModal(false)}>Cancel</button>
           </div>
         )}
-
-        <button data-glow>
-          <span>Glow Up</span>
-        </button>
       </article>
     );
   }
+
+  // Display linksRewardsData card
+  return (
+    <article data-glow>
+      <span data-glow />
+      <div className="card-content">
+        {/* Display linksRewardsData content */}
+        <p>Referral Rewards: {data.referralRewards}</p>
+        <p>Referral Link: {data.referralLink}</p>
+      </div>
+    </article>
+  );
 };
 
 export default Card;
-      
+        
